@@ -11,7 +11,7 @@ int y;
 uint8_t *framebuffer;
 void drawAreaFromFramebuffer(Rect_t area = epd_full_screen(), uint8_t *framebuffer = framebuffer)
 {
-  epd_draw_grayscale_image(area, framebuffer);
+  epd_draw_image(area, framebuffer, BLACK_ON_WHITE);
 }
 void writeYeTerminal(const GFXfont *font, const char *string, int *cursor_x, int *cursor_y, uint8_t *framebuffer, double lineHeight = 1, bool vertical = false)
 {
@@ -54,7 +54,7 @@ void setup()
   epd_fill_circle(500, 500, 200, 130, framebuffer);
   epd_fill_circle(600, 600, 200, 0, framebuffer);
   //
-  drawAreaFromFramebuffer();
+  // drawAreaFromFramebuffer();
   //
   //
   // writeYeTerminal into buffer is broken for white text. I'd have to:
@@ -62,23 +62,68 @@ void setup()
   // - might as well fix write_string passing mode there to but doesn't look like they're accepting PRs
   // - might also as well add like, a line-height param
   //
-  x = 300;
-  y = 300;
-  writeYeTerminal((GFXfont *)&FiraMono, "Lots\nand\nlots\nof\njuicy\nnew\nlines\nbaby!", &x, &y, NULL, .8, true);
+  // x = 300;
+  // y = 300;
+  // writeYeTerminal((GFXfont *)&FiraMono, "Lots\nand\nlots\nof\njuicy\nnew\nlines\nbaby!", &x, &y, NULL, .8, true);
   //
   // AND there's probably a cleverer way of doing this, like
   // Only writing the bottom line and copy paste dumping the framebuffer pixels upward
   //
-  // !! In fact, don't bother continuing with vertical=true until I've had a thought about this !!
+  // !! In fact, don't bother continuing with vertical=true until I've had a thought about this:: !!
+  // Full text buffer:
+  // - Draw individual characters along the bottom line
+  // - When \n detected, dump it in buffer above
   //
+  // Pixels *******:
+  // - Draw individual characters along the bottom line
+  // - When \n detected, draw entire framebuffer y: -30px onto the screen
+  // - Clear bottom line area
   //
-  // Single line
-  // Text doesn't have to use the buffer, it can be NULL for direct draw which works nicely with WHITE_ON_WHITE. Here's
-  // x = 0;
-  // y = 250;
-  // char *string1 = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
-  // write_mode((GFXfont *)&FiraMono, string1, &x, &y, NULL, WHITE_ON_WHITE, NULL);
+  // Draw bottom half to top or something
+  // epd_clear();
   //
+  epd_fill_rect(0, 0, EPD_WIDTH, EPD_HEIGHT / 2, 0, framebuffer);
+  // epd_draw_image(epd_full_screen(), framebuffer, BLACK_ON_WHITE);
+  // delay(2000);
+  // Single lines
+  x = 0;
+  y = 480;
+  char *string0 = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+  write_mode((GFXfont *)&FiraMono, string0, &x, &y, framebuffer, BLACK_ON_WHITE, NULL);
+  x = 0;
+  y = 500;
+  char *string1 = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+  write_mode((GFXfont *)&FiraMono, string1, &x, &y, framebuffer, WHITE_ON_WHITE, NULL);
+  x = 0;
+  y = 530;
+  char *string2 = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+  write_mode((GFXfont *)&FiraMono, string2, &x, &y, framebuffer, WHITE_ON_BLACK, NULL);
+  //
+  epd_draw_image(epd_full_screen(), framebuffer, WHITE_ON_BLACK);
+  delay(3000);
+  //
+  // Fill top black
+  epd_fill_rect(0, 0, EPD_WIDTH, EPD_HEIGHT / 2, 255, framebuffer);
+  delay(1000);
+  // Redraw top half only
+  drawAreaFromFramebuffer(Rect_t{
+      .x = 0,
+      .y = 0,
+      .width = EPD_WIDTH,
+      .height = EPD_HEIGHT / 2,
+  });
+  delay(3000);
+  // Copy screen offset vertically up
+  epd_draw_image(Rect_t{
+                     .x = 0,
+                     .y = -EPD_HEIGHT / 2,
+                     .width = EPD_WIDTH,
+                     .height = EPD_HEIGHT,
+                 },
+                 framebuffer, BLACK_ON_WHITE);
+  delay(3000);
+  // Redraw everything
+  drawAreaFromFramebuffer();
   epd_poweroff();
   delay(5000);
 }
