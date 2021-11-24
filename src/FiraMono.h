@@ -548,12 +548,13 @@ const UnicodeInterval FiraMonoIntervals[] = {
     { 0x20, 0x7E, 0x0 },
 };
 const GFXfont FiraMono = {
-    (uint8_t*)FiraMonoBitmaps,
-    (GFXglyph*)FiraMonoGlyphs,
-    (UnicodeInterval*)FiraMonoIntervals,
-    1,
-    1,
-    30,
-    24,
-    -7,
+    (uint8_t*)FiraMonoBitmaps, // Glyph bitmaps, concatenated
+    (GFXglyph*)FiraMonoGlyphs, // Glyph array
+    (UnicodeInterval*)FiraMonoIntervals, // Valid unicode intervals for this font
+// Myke: this is all generated with fontconvert.py .. try not to edit it
+    1, // Number of unicode intervals.
+    1, // Does this font use compressed glyph bitmaps?
+    30, // advance_y: Newline distance (y axis)
+    24, // ascender: Maximal height of a glyph above the base line
+    -7, // descender
 };

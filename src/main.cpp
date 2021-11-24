@@ -2,53 +2,39 @@
 #error "Please enable PSRAM !!!"
 #endif
 #include <Arduino.h>
-#include <esp_task_wdt.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+// Happily includes from lib/package/src/ if necessary
 #include "epd_driver.h"
-// Happily includes from lib/package/src/firasans.h
-#include "firasans.h"
-#include "esp_adc_cal.h"
-#include <Wire.h>
-#include <SPI.h>
-#include <SD.h>
-#include "logo.h"
+#include "FiraMono.h"
 #define BATT_PIN 36
-#define SD_MISO 12
-#define SD_MOSI 13
-#define SD_SCLK 14
-#define SD_CS 15
+int x;
+int y;
 uint8_t *framebuffer;
-int vref = 1100;
+void drawAreaFromFramebuffer(Rect_t area = epd_full_screen(), uint8_t *framebuffer = framebuffer)
+{
+  epd_draw_grayscale_image(area, framebuffer);
+}
+void writeYeTerminal(const GFXfont *font, const char *string, int *cursor_x, int *cursor_y, uint8_t *framebuffer, double lineHeight = 1, bool vertical = false)
+{
+  // Nicked from epd_driver.h write_string but using write_mode for white text, line height, bottom-up layout, etc
+  char *token, *newstring, *tofree;
+  if (string == NULL || newstring == NULL)
+  {
+    return;
+  }
+  tofree = newstring = strdup(string);
+  // taken from the strsep manpage
+  int line_start = *cursor_x;
+  while ((token = strsep(&newstring, "\n")) != NULL)
+  {
+    *cursor_x = line_start;
+    write_mode(font, token, cursor_x, cursor_y, framebuffer, WHITE_ON_WHITE, NULL);
+    *cursor_y += font->advance_y * lineHeight;
+  }
+  free(tofree);
+}
 void setup()
 {
-  char buf[128];
   Serial.begin(115200);
-  /*
-    * SD Card test
-    * Only as a test SdCard hardware, use example reference
-    * https://github.com/espressif/arduino-esp32/tree/master/libraries/SD/examples
-    * * */
-  SPI.begin(SD_SCLK, SD_MISO, SD_MOSI);
-  bool rlst = SD.begin(SD_CS);
-  if (!rlst)
-  {
-    Serial.println("SD init failed");
-    snprintf(buf, 128, "➸ No detected SdCard");
-  }
-  else
-  {
-    snprintf(buf, 128, "➸ Detected SdCard insert:%.2f GB", SD.cardSize() / 1024.0 / 1024.0 / 1024.0);
-  }
-  // Correct the ADC reference voltage
-  esp_adc_cal_characteristics_t adc_chars;
-  esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
-  if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF)
-  {
-    Serial.printf("eFuse Vref:%u mV", adc_chars.vref);
-    vref = adc_chars.vref;
-  }
-  epd_init();
   framebuffer = (uint8_t *)ps_calloc(sizeof(uint8_t), EPD_WIDTH * EPD_HEIGHT / 2);
   if (!framebuffer)
   {
@@ -57,66 +43,68 @@ void setup()
       ;
   }
   memset(framebuffer, 0xFF, EPD_WIDTH * EPD_HEIGHT / 2);
-  Rect_t area = {
-      .x = 230,
-      .y = 20,
-      .width = logo_width,
-      .height = logo_height,
-  };
+  epd_init();
   epd_poweron();
   epd_clear();
-  epd_draw_grayscale_image(area, (uint8_t *)logo_data);
+  epd_fill_rect(0, 0, EPD_WIDTH, EPD_HEIGHT, 0, framebuffer);
+  epd_draw_rect(600, 450, 120, 60, 0, framebuffer);
+  epd_fill_circle(200, 200, 200, 230, framebuffer);
+  epd_fill_circle(300, 300, 200, 210, framebuffer);
+  epd_fill_circle(400, 400, 200, 180, framebuffer);
+  epd_fill_circle(500, 500, 200, 130, framebuffer);
+  epd_fill_circle(600, 600, 200, 0, framebuffer);
+  //
+  drawAreaFromFramebuffer();
+  //
+  //
+  // writeYeTerminal into buffer is broken for white text. I'd have to:
+  // - fuck about with draw_char, passing mode and figuring the pixel colours out,
+  // - might as well fix write_string passing mode there to but doesn't look like they're accepting PRs
+  // - might also as well add like, a line-height param
+  //
+  x = 300;
+  y = 300;
+  writeYeTerminal((GFXfont *)&FiraMono, "Lots\nand\nlots\nof\njuicy\nnew\nlines\nbaby!", &x, &y, NULL, .8, true);
+  //
+  // AND there's probably a cleverer way of doing this, like
+  // Only writing the bottom line and copy paste dumping the framebuffer pixels upward
+  //
+  // !! In fact, don't bother continuing with vertical=true until I've had a thought about this !!
+  //
+  //
+  // Single line
+  // Text doesn't have to use the buffer, it can be NULL for direct draw which works nicely with WHITE_ON_WHITE. Here's
+  // x = 0;
+  // y = 250;
+  // char *string1 = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+  // write_mode((GFXfont *)&FiraMono, string1, &x, &y, NULL, WHITE_ON_WHITE, NULL);
+  //
   epd_poweroff();
-  int cursor_x = 200;
-  int cursor_y = 250;
-  char *string1 = "➸ 16 color grayscale  😀 \n";
-  char *string2 = "➸ Use with 4.7\" EPDs 😍 \n";
-  char *string3 = "➸ High-quality font rendering ✎🙋";
-  char *string4 = "➸ ~630ms for full frame draw 🚀\n";
-  epd_poweron();
-  writeln((GFXfont *)&FiraSans, buf, &cursor_x, &cursor_y, NULL);
-  delay(500);
-  cursor_x = 200;
-  cursor_y += 50;
-  writeln((GFXfont *)&FiraSans, string1, &cursor_x, &cursor_y, NULL);
-  delay(500);
-  cursor_x = 200;
-  cursor_y += 50;
-  writeln((GFXfont *)&FiraSans, string2, &cursor_x, &cursor_y, NULL);
-  delay(500);
-  cursor_x = 200;
-  cursor_y += 50;
-  writeln((GFXfont *)&FiraSans, string3, &cursor_x, &cursor_y, NULL);
-  delay(500);
-  cursor_x = 200;
-  cursor_y += 50;
-  writeln((GFXfont *)&FiraSans, string4, &cursor_x, &cursor_y, NULL);
-  delay(500);
-  epd_poweroff();
+  delay(5000);
+}
+void batteryMeter()
+{
+  uint16_t v = analogRead(BATT_PIN);
+  // (From demo code 🤷🏼‍♀️)
+  int vref = 1100;
+  float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+  String voltage = String(battery_voltage) + "V\nfoo\nbar\nbaz";
+  int x = 0;
+  int y = 20;
+  // int x = EPD_WIDTH - 100;
+  // int y = 0;
+  epd_clear_area(Rect_t{
+      .x = x,
+      .y = y,
+      .width = 100,
+      .height = 50,
+  });
+  write_mode((GFXfont *)&FiraMono, (char *)voltage.c_str(), &x, &y, NULL, WHITE_ON_WHITE, NULL);
 }
 void loop()
 {
-  // When reading the battery voltage, POWER_EN must be turned on
-  epd_poweron();
-  uint16_t v = analogRead(BATT_PIN);
-  float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
-  String voltage = "➸ Voltage :" + String(battery_voltage) + "V";
-  Serial.println(voltage);
-  Rect_t area = {
-      .x = 200,
-      .y = 460,
-      .width = 320,
-      .height = 50,
-  };
-  int cursor_x = 200;
-  int cursor_y = 500;
-  epd_clear_area(area);
-  writeln((GFXfont *)&FiraSans, (char *)voltage.c_str(), &cursor_x, &cursor_y, NULL);
-  // There are two ways to close
-  // It will turn off the power of the ink screen, but cannot turn off the blue LED light.
-  // epd_poweroff();
-  //It will turn off the power of the entire
-  // POWER_EN control and also turn off the blue LED light
-  epd_poweroff_all();
-  delay(5000);
+  // epd_poweron();
+  // batteryMeter();
+  // epd_poweroff_all();
+  // delay(5000);
 }
