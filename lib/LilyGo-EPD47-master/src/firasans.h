@@ -7507,7 +7507,7 @@ const uint8_t FiraSansBitmaps[120056] = {
     0x22, 0x4D, 0x3E, 0x04, 0x57, 0xE0, 0x9E, 0x39,
 };
 const GFXglyph FiraSansGlyphs[] = {
-    { 0, 0, 11, 0, 0, 8, 0 }, //  
+    { 0, 0, 11, 0, 0, 8, 0 }, //
     { 6, 30, 10, 2, 29, 61, 8 }, // !
     { 13, 11, 17, 2, 29, 72, 69 }, // "
     { 21, 29, 22, 0, 29, 185, 141 }, // #
@@ -8187,13 +8187,21 @@ const UnicodeInterval FiraSansIntervals[] = {
     { 0x2700, 0x27BF, 0x15F },
     { 0x1F600, 0x1F680, 0x21F },
 };
+
+  // uint16_t bitmapOffset; ///< Pointer into GFXfont->bitmap
+  // uint8_t width;         ///< Bitmap dimensions in pixels
+  // uint8_t height;        ///< Bitmap dimensions in pixels
+  // uint8_t xAdvance;      ///< Distance to advance cursor (x axis)
+  // int8_t xOffset;        ///< X dist from cursor pos to UL corner
+  // int8_t yOffset;        ///< Y dist from cursor pos to UL corner
 const GFXfont FiraSans = {
     (uint8_t*)FiraSansBitmaps,
     (GFXglyph*)FiraSansGlyphs,
     (UnicodeInterval*)FiraSansIntervals,
-    5,
-    1,
-    50,
-    39,
-    -12,
+    // Doesn't appear to notice any of these tbh:
+    5, //  width
+    1, //  height
+    50, //  xAdvance
+    39, // xOffset
+    -12, // yOffset
 };
