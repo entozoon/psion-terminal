@@ -12,7 +12,6 @@
 #include "esp_sleep.h"
 // font
 #include "FiraMono.h"
-#include "Firasans.h"
 #define BATT_PIN 36
 #define WAVEFORM EPD_BUILTIN_WAVEFORM
 /**
@@ -209,6 +208,12 @@ void loop() {
     start_deep_sleep_with_wakeup_sources();
   }
 }
+//
+// Valuable stuff below here, if nothing else the battery monitor.
+// Shit, that means it needs wiring directly.. and I've burnt the fucking pads
+// off, lol
+//
+//
 // #ifndef BOARD_HAS_PSRAM
 // #error "Please enable PSRAM !!!"
 // #endif
