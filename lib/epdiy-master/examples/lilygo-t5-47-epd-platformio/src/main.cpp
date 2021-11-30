@@ -1,17 +1,12 @@
-#include <Arduino.h>
-// esp32 sdk imports
-#include "esp_heap_caps.h"
-#include "esp_log.h"
-// epd
+#include "Firasans.h"
 #include "epd_driver.h"
 #include "epd_highlevel.h"
-// battery
 #include "esp_adc_cal.h"
-#include <driver/adc.h>
-// deepsleep
+#include "esp_heap_caps.h"
+#include "esp_log.h"
 #include "esp_sleep.h"
-// font
-#include "Firasans.h"
+#include <Arduino.h>
+#include <driver/adc.h>
 #define BATT_PIN 36
 #define WAVEFORM EPD_BUILTIN_WAVEFORM
 /**
@@ -20,9 +15,9 @@
  * https://ae01.alicdn.com/kf/H133488d889bd4dd4942fbc1415e0deb1j.jpg
  */
 gpio_num_t FIRST_BTN_PIN = GPIO_NUM_39;
-EpdiyHighlevelState hl;
 // ambient temperature around device
 int temperature = 20;
+EpdiyHighlevelState hl;
 uint8_t *fb;
 enum EpdDrawError err;
 // CHOOSE HERE YOU IF YOU WANT PORTRAIT OR LANDSCAPE
