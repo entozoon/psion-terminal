@@ -17,49 +17,20 @@ extern "C" {
 #include "st.h"
 }
 // Note USB https://github.com/vroland/epdiy/issues/12#issuecomment-761029851
-#define USB_TXD (GPIO_NUM_4)
-#define SERIAL_RXD (GPIO_NUM_5)
+#define USB_TXD (GPIO_NUM_14)
+#define SERIAL_RXD (GPIO_NUM_15)
 #define BUF_SIZE (4096)
 #define ESC_BUF_SIZE (128 * 4)
 #define ESC_ARG_SIZE 16
 #define BATT_PIN 36
 #define WAVEFORM EPD_BUILTIN_WAVEFORM
-// ambient temperature around device
-int temperature = 20;
 EpdiyHighlevelState hl;
 uint8_t *fb;
-enum EpdDrawError err;
 // EpdRotation orientation = EPD_ROT_INVERTED_LANDSCAPE;
 EpdRotation orientation = EPD_ROT_LANDSCAPE;
 int vref = 1100;
 RTC_DATA_ATTR int pressed_wakeup_btn_index;
 int64_t maxTimeRunning = 30000000;
-double_t get_battery_percentage() {
-  // When reading the battery voltage, POWER_EN must be turned on
-  epd_poweron();
-  delay(50);
-  Serial.println(epd_ambient_temperature());
-  uint16_t v = analogRead(BATT_PIN);
-  Serial.print("Battery analogRead value is");
-  Serial.println(v);
-  double_t battery_voltage =
-      ((double_t)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
-  // Better formula needed I suppose
-  // experimental super simple percent estimate no lookup anything just divide
-  // by 100
-  double_t percent_experiment = ((battery_voltage - 3.7) / 0.5) * 100;
-  // cap out battery at 100%
-  // on charging it spikes higher
-  if (percent_experiment > 100) {
-    percent_experiment = 100;
-  }
-  String voltage = "Battery Voltage :" + String(battery_voltage) +
-                   "V which is around " + String(percent_experiment) + "%";
-  Serial.println(voltage);
-  epd_poweroff();
-  delay(50);
-  return percent_experiment;
-}
 void csihandle(void);
 void tclearregion(int x1, int y1, int x2, int y2);
 int min(int a, int b) { return a < b ? a : b; }
@@ -83,7 +54,6 @@ void display_center_message(const char *text) {
   font_props.flags = EPD_DRAW_ALIGN_CENTER;
   epd_write_string(&FiraSans_12, text, &cursor_x, &cursor_y, fb, &font_props);
   epd_poweron();
-  err = epd_hl_update_screen(&hl, MODE_GC16, temperature);
   delay(500);
   epd_poweroff();
   delay(1000);
