@@ -2,11 +2,11 @@
 
 LilyGo T5 4.7" e-ink terminal display reading, say the output of a Pi, via serial pins.
 
-Borrowing massively from [this library](https://github.com/vroland/epdiy), this is a standalone device but only really exists to serve a [larger project](https://github.com/entozoon/terminal-bitch).
+This is a standalone device but only really exists to serve a [larger project](https://github.com/entozoon/terminal-bitch).
 
 ## Hangups
 
-- Ideally wanting to use the intrepid [vroland](https://github.com/vroland)'s terminal software but there's an issue with this [example and platformio](https://github.com/vroland/epdiy/issues/12#issuecomment-983142030)
+- Ideally wanting to use the intrepid [vroland](https://github.com/vroland)'s terminal software but there's an issue with this [example and platformio](https://github.com/vroland/epdiy/issues/12#issuecomment-983142030). I've managed to get it working at a drastically reduced row/column count but that isn't gonna fly.
 
 ## Principles
 
@@ -17,6 +17,14 @@ Borrowing massively from [this library](https://github.com/vroland/epdiy), this 
 ## To Do
 
 - Abstract this as its own device, to be included properly in the larger terminal-bitch project.
+
+## Type through Pi serial via ssh
+
+```bash
+sudo apt-get install screen
+sudo screen /dev/ttyAMA0 115200
+(which will be blank on computer)
+```
 
 ## Notes:
 
